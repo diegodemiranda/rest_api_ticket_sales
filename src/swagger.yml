@@ -1,0 +1,255 @@
+# swagger.yml
+# Especificação OpenAPI 3.0 — Sistema de Venda de Ingressos Online
+
+openapi: 3.0.0
+
+info:
+  title: "API de Venda de Ingressos"
+  description: "Gerenciamento de eventos e compra de ingressos online"
+  version: "1.0.0"
+
+servers:
+  - url: "/api"
+
+components:
+  schemas:
+
+    Evento:
+      type: object
+      required:
+        - nome
+        - data_evento
+        - preco
+        - capacidade
+      properties:
+        nome:
+          type: string
+          example: "Show Rock Nacional"
+        descricao:
+          type: string
+          example: "Os melhores clássicos do rock brasileiro"
+        local:
+          type: string
+          example: "Ginásio Municipal"
+        data_evento:
+          type: string
+          format: date-time
+          example: "2025-08-15T20:00:00"
+        preco:
+          type: number
+          format: float
+          example: 150.00
+        capacidade:
+          type: integer
+          example: 500
+
+    CompraIngresso:
+      type: object
+      required:
+        - evento_id
+        - nome_cliente
+        - email_cliente
+        - cpf_cliente
+      properties:
+        evento_id:
+          type: integer
+          example: 1
+        nome_cliente:
+          type: string
+          example: "João da Silva"
+        email_cliente:
+          type: string
+          format: email
+          example: "joao@email.com"
+        cpf_cliente:
+          type: string
+          example: "123.456.789-00"
+        quantidade:
+          type: integer
+          minimum: 1
+          maximum: 10
+          default: 1
+          example: 2
+
+# ────────────────────────────────────
+# ENDPOINTS DE EVENTOS
+# ────────────────────────────────────
+
+paths:
+  /eventos:
+    get:
+      operationId: "eventos.read_all"
+      tags:
+        - "Eventos"
+      summary: "Lista todos os eventos disponíveis"
+      responses:
+        "200":
+          description: "Lista de eventos retornada"
+
+    post:
+      operationId: "eventos.create"
+      tags:
+        - "Eventos"
+      summary: "Cria um novo evento"
+      requestBody:
+        description: "Dados do novo evento"
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Evento"
+      responses:
+        "201":
+          description: "Evento criado com sucesso"
+        "406":
+          description: "Evento já existe"
+
+  /eventos/{evento_id}:
+    get:
+      operationId: "eventos.read_one"
+      tags:
+        - "Eventos"
+      summary: "Retorna os detalhes de um evento"
+      parameters:
+        - name: evento_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: "Evento encontrado"
+        "404":
+          description: "Evento não encontrado"
+
+    put:
+      operationId: "eventos.update"
+      tags:
+        - "Eventos"
+      summary: "Atualiza os dados de um evento"
+      parameters:
+        - name: evento_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        description: "Dados atualizados do evento"
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Evento"
+      responses:
+        "200":
+          description: "Evento atualizado"
+        "404":
+          description: "Evento não encontrado"
+
+    delete:
+      operationId: "eventos.delete"
+      tags:
+        - "Eventos"
+      summary: "Remove um evento e todos os seus ingressos"
+      parameters:
+        - name: evento_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: "Evento removido"
+        "404":
+          description: "Evento não encontrado"
+
+  /eventos/{evento_id}/ingressos:
+    get:
+      operationId: "ingressos.por_evento"
+      tags:
+        - "Ingressos"
+      summary: "Lista todos os ingressos vendidos de um evento"
+      parameters:
+        - name: evento_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: "Lista de ingressos do evento"
+        "404":
+          description: "Evento não encontrado"
+
+# ────────────────────────────────────
+# ENDPOINTS DE INGRESSOS
+# ────────────────────────────────────
+
+  /ingressos:
+    get:
+      operationId: "ingressos.read_all"
+      tags:
+        - "Ingressos"
+      summary: "Lista todas as compras de ingressos (administrador)"
+      responses:
+        "200":
+          description: "Lista de compras"
+
+    post:
+      operationId: "ingressos.comprar"
+      tags:
+        - "Ingressos"
+      summary: "Realiza a compra de ingresso(s)"
+      requestBody:
+        description: "Dados da compra"
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompraIngresso"
+      responses:
+        "201":
+          description: "Compra realizada com sucesso"
+        "400":
+          description: "Quantidade inválida"
+        "404":
+          description: "Evento não encontrado"
+        "409":
+          description: "Sem vagas suficientes"
+
+  /ingressos/{ingresso_id}:
+    get:
+      operationId: "ingressos.read_one"
+      tags:
+        - "Ingressos"
+      summary: "Consulta um ingresso pelo ID"
+      parameters:
+        - name: ingresso_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: "Ingresso encontrado"
+        "404":
+          description: "Ingresso não encontrado"
+
+    delete:
+      operationId: "ingressos.cancelar"
+      tags:
+        - "Ingressos"
+      summary: "Cancela um ingresso"
+      parameters:
+        - name: ingresso_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: "Ingresso cancelado"
+        "404":
+          description: "Ingresso não encontrado"
+        "409":
+          description: "Ingresso já cancelado"
